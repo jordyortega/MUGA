@@ -338,7 +338,7 @@ contract MUGA is ERC20, Ownable {
     }
 
     function updateMaxWallet(uint256 newMax) external onlyOwner {
-        require(newMax >= 2000000, "MUGA: max wallet must be 2% or higher");
+        require(newMax >= 2000000 * (10**18), "MUGA: max wallet must be 2% or higher");
         emit MaxWalletUpdated(maxBuy, newMax);
         maxBuy = newMax;
     }
