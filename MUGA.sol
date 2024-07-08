@@ -226,7 +226,7 @@ contract MUGA is ERC20, Ownable {
     mapping (address => bool) public isTaxesExempt;
     mapping (address => bool) public isWhitelisted;
     bool public tradingEnabled = false;
-    address payable public taxWallet = payable(0x1320962204D5d556d6fD3799559243e99533953c);
+    address payable public taxWallet = payable(0x0000000000000000000000000000000000000000);
 
     event PaidOutTaxes(uint256 contract_token_balance);
     event TaxAmountUpdated(uint256 oldTax, uint256 newTax);
@@ -241,7 +241,7 @@ contract MUGA is ERC20, Ownable {
 
     constructor() ERC20("Make USA Great Again", "MUGA") {
 
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
         address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).createPair(address(this), _uniswapV2Router.WETH());
 
         uniswapV2Router = _uniswapV2Router;
