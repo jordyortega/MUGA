@@ -239,7 +239,7 @@ contract MUGA is ERC20, Ownable {
         inSwapping = false;
     }
 
-    constructor() ERC20("Make Utility Great Again", "MUGA") {
+    constructor() ERC20("Make USA Great Again", "MUGA") {
 
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
         address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).createPair(address(this), _uniswapV2Router.WETH());
@@ -327,6 +327,14 @@ contract MUGA is ERC20, Ownable {
 
     function removeWhitelist(address account) external onlyOwner {
         isWhitelisted[account] = false;
+    }
+
+    function addTaxesExempt(address account) external onlyOwner {
+        isTaxesExempt[account] = true;
+    }
+
+    function removeTaxesExempt(address account) external onlyOwner {
+        isTaxesExempt[account] = false;
     }
 
     function updateMaxWallet(uint256 newMax) external onlyOwner {
