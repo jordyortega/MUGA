@@ -208,6 +208,7 @@ contract MUGA is ERC20, Ownable {
     uint256 public thirdLaunchTax = 25;
     uint256 public maxTransactionAmount = 2000000 * (10**18);
     mapping (address => bool) public isTaxesExempt;
+    mapping (address => bool) public isMaxTransactionExempt;
     address payable public constant taxWallet = payable(0);
 
     event PaidOutTaxes(uint256 contract_token_balance);
@@ -232,6 +233,10 @@ contract MUGA is ERC20, Ownable {
         isTaxesExempt[taxWallet] = true;
         isTaxesExempt[address(this)] = true;
         
+        isMaxTransactionExempt[owner()] = true;
+        isMaxTransactionExempt[taxWallet] = true;
+        isMaxTransactionExempt[address(this)] = true;
+        
         _mint(owner(), 100000000 * (10**18));
     }
 
@@ -244,7 +249,7 @@ contract MUGA is ERC20, Ownable {
             return;
         }
 
-        if(from == uniswapV2Pair && !isTaxesExempt[to]) {
+        if(from == uniswapV2Pair && !isMaxTransactionExempt[to]) {
             uint256 receiverBalance = balanceOf(to);
             uint256 newReceiverBalance = receiverBalance + amount;
             require(newReceiverBalance <= maxTransactionAmount, "MUGA: Exceeds max transaction amount");
@@ -323,6 +328,10 @@ contract MUGA is ERC20, Ownable {
 
     function setTaxExemption(address account, bool status) external onlyOwner {
         isTaxesExempt[account] = status;
+    }
+
+    function setMaxTransactionExemption(address account, bool status) external onlyOwner {
+        isMaxTransactionExempt[account] = status;
     }
 
     function setPayoutTaxAtAmount(uint256 _payoutTaxAtAmount) external onlyOwner {
