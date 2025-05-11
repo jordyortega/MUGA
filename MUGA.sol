@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicensed
-pragma solidity 0.8.29;
+pragma solidity 0.8.30;
 
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
@@ -202,8 +202,11 @@ contract MUGA is ERC20, Ownable {
     uint256 public payoutTaxAtAmount = 10000 * (10**18);
     uint256 public totalTax = 5;
     uint256 public launchBlock;
-    uint256 public launchTaxBlocks = 5;
+    uint256 public launchTaxBlocks = 75;
     uint256 public launchTax = 70;
+    uint256 public secondLaunchTax = 50;
+    uint256 public thirdLaunchTax = 25;
+    uint256 public maxTransactionAmount = 2000000 * (10**18);
     mapping (address => bool) public isTaxesExempt;
     address payable public constant taxWallet = payable(0);
 
@@ -230,7 +233,6 @@ contract MUGA is ERC20, Ownable {
         isTaxesExempt[owner()] = true;
         isTaxesExempt[taxWallet] = true;
         isTaxesExempt[address(this)] = true;
-        // add more wallets here
         
         _mint(owner(), 100000000 * (10**18));
     }
@@ -243,6 +245,12 @@ contract MUGA is ERC20, Ownable {
             super._transfer(from, to, 0);
             return;
         }
+
+        if(from == uniswapV2Pair && !isTaxesExempt[to]) {
+            uint256 receiverBalance = balanceOf(to);
+            uint256 newReceiverBalance = receiverBalance + amount;
+            require(newReceiverBalance <= maxTransactionAmount, "MUGA: Exceeds max transaction amount");
+        }
         
         uint256 contract_token_balance = balanceOf(address(this));
         bool overMinTokenBalance = contract_token_balance >= payoutTaxAtAmount;
@@ -252,14 +260,27 @@ contract MUGA is ERC20, Ownable {
         }
 
         if((to == uniswapV2Pair && !isTaxesExempt[from]) || (from == uniswapV2Pair && !isTaxesExempt[to])) {
-            uint256 currentTaxRate = (block.number <= launchBlock + launchTaxBlocks) ? launchTax : totalTax;
-            uint256 taxes = ((amount * currentTaxRate) / 100);
+            uint256 currentTaxRate = getCurrentTaxRate();
+            uint256 taxes = (amount * currentTaxRate) / 100;
             amount -= taxes;
             super._transfer(from, address(this), taxes); 
         }
 
         super._transfer(from, to, amount);
+    }
 
+    function getCurrentTaxRate() public view returns (uint256) {
+        uint256 blocksSinceLaunch = block.number - launchBlock;
+        
+        if (blocksSinceLaunch > launchTaxBlocks) {
+            return totalTax;
+        } else if (blocksSinceLaunch > 50) {
+            return thirdLaunchTax;
+        } else if (blocksSinceLaunch > 25) {
+            return secondLaunchTax;
+        } else {
+            return launchTax;
+        }
     }
 
     function payoutTaxes(uint256 contract_token_balance) private lockTheSwap {
@@ -269,7 +290,6 @@ contract MUGA is ERC20, Ownable {
     }
 
     function swapTokensForETH(uint256 tokenAmount) private {
-
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = uniswapV2Router.WETH();
@@ -285,7 +305,6 @@ contract MUGA is ERC20, Ownable {
             address(this),
             block.timestamp
         );
-        
     }
 
     function setTax(uint256 _tax) external onlyOwner {
@@ -293,6 +312,15 @@ contract MUGA is ERC20, Ownable {
         totalTax = _tax;
         emit SetTax(_tax);
     }
+
+    function setMaxTransactionAmount(uint256 newMaxTransactionAmount) external onlyOwner {
+        require(newMaxTransactionAmount > 1000000 * (10**18), "Max transaction amount must be greater than 1,000,000");
+        maxTransactionAmount = newMaxTransactionAmount;
+    }
+
+    // function setTaxExemption(address account, bool status) external onlyOwner {
+    //     isTaxesExempt[account] = status;
+    // }
 
     function setPayoutTaxAtAmount(uint256 _payoutTaxAtAmount) external onlyOwner {
         payoutTaxAtAmount = _payoutTaxAtAmount * (10**18);
